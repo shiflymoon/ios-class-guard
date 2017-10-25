@@ -196,6 +196,10 @@ static NSString *const lettersSet[maxLettersSet] = {
             }
         }
         
+        if([randomStr hasPrefix:@"new"] || [randomStr hasPrefix:@"New"]){
+            continue;
+        }
+        
         if([_uniqueSymbols containsObject:randomStr]){
             ++length;
             continue;
