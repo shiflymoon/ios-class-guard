@@ -196,7 +196,7 @@ static NSString *const lettersSet[maxLettersSet] = {
             }
         }
         
-        if([randomStr hasPrefix:@"new"] || [randomStr hasPrefix:@"New"]){
+        if([randomStr hasPrefix:@"new"] || [randomStr hasPrefix:@"copy"]){
             continue;
         }
         
