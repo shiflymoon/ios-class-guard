@@ -197,7 +197,7 @@ static NSString *const lettersSet[maxLettersSet] = {
         }
         
         
-        if([_uniqueSymbols containsObject:randomStr]){
+        if([_uniqueSymbols containsObject:randomStr] ||[_forbiddenNames containsObject:randomStr]){
             ++length;
             continue;
         }else{
