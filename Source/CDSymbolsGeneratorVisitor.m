@@ -122,19 +122,22 @@ static NSString *const lettersSet[maxLettersSet] = {
 
     [_resultString appendFormat:@"// Protocols\r\n"];
     for (NSString *protocolName in _protocolNames) {
-        [self generateSimpleSymbols:protocolName];
+       // [self generateSimpleSymbols:protocolName];
+        [self generateCompleteSymbols:protocolName];
     }
     [_resultString appendFormat:@"\r\n"];
 
     [_resultString appendFormat:@"// Classes\r\n"];
     for (NSString *className in _classNames) {
-        [self generateSimpleSymbols:className];
+       // [self generateSimpleSymbols:className];
+        [self generateCompleteSymbols:className];
     }
     [_resultString appendFormat:@"\r\n"];
 
     [_resultString appendFormat:@"// Categories\r\n"];
     for (NSString *categoryName in _categoryNames) {
-        [self generateSimpleSymbols:categoryName];
+       // [self generateSimpleSymbols:categoryName];
+        [self generateCompleteSymbols:categoryName];
     }
     [_resultString appendFormat:@"\r\n"];
 
@@ -227,6 +230,29 @@ static NSString *const lettersSet[maxLettersSet] = {
     }
     NSString *newSymbolName = [self generateRandomStringWithLength:symbolName.length];
     [self addGenerated:newSymbolName forSymbol:symbolName];
+}
+
+- (void)generateCompleteSymbols:(NSString *)symbolName
+{
+    if ([self doesContainGeneratedSymbol:symbolName]) {
+        return;
+    }
+    if ([self shouldSymbolsBeIgnored:symbolName]) {
+        return;
+    }
+    NSArray * keepSuffixArray = @[@"ViewController",@"View",@"Protocol",@"Controller",@"AppDelegate",@"Delegate"];
+    NSInteger length = 0;
+    for(NSString * keepStr in keepSuffixArray){
+        if([symbolName hasSuffix:keepStr]){
+            length = symbolName.length - keepStr.length;
+            if(length > 0){
+                NSString * newSymbolName = [self generateRandomStringWithLength:length];
+                [self addGenerated:[NSString stringWithFormat:@"%@%@",newSymbolName,keepStr] forSymbol:symbolName];
+            }
+            break;
+        }
+    }
+   
 }
 
 - (bool)isInitMethod:(NSString *)symbolName {
