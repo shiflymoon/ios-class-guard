@@ -242,6 +242,7 @@ static NSString *const lettersSet[maxLettersSet] = {
     }
     NSArray * keepSuffixArray = @[@"ViewController",@"View",@"Protocol",@"Controller",@"AppDelegate",@"Delegate"];
     NSInteger length = 0;
+    BOOL haveConfus = NO;
     for(NSString * keepStr in keepSuffixArray){
         if([symbolName hasSuffix:keepStr]){
             length = symbolName.length - keepStr.length;
@@ -249,8 +250,14 @@ static NSString *const lettersSet[maxLettersSet] = {
                 NSString * newSymbolName = [self generateRandomStringWithLength:length];
                 [self addGenerated:[NSString stringWithFormat:@"%@%@",newSymbolName,keepStr] forSymbol:symbolName];
             }
+            haveConfus = YES;
             break;
         }
+    }
+    
+    if(!haveConfus){//走原有的逻辑
+        NSString *newSymbolName = [self generateRandomStringWithLength:symbolName.length];
+        [self addGenerated:newSymbolName forSymbol:symbolName];
     }
    
 }
