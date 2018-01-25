@@ -35,6 +35,8 @@ static NSString *const lettersSet[maxLettersSet] = {
     BOOL _ignored;
 
     NSMutableString *_resultString;
+    
+    NSString * _currentConfuseStr;
 }
 
 - (void)addForbiddenSymbols {
@@ -180,28 +182,45 @@ static NSString *const lettersSet[maxLettersSet] = {
 
         return randomString;
     }*/
+    static dispatch_once_t onceToken;
+    static NSArray * randomZiMu = nil;
+    dispatch_once(&onceToken, ^{
+        randomZiMu = @[@"a",@"b",@"c",@"d",@"e",@"f",@"g",@"h",@"i",@"j",@"k",@"l",@"m",@"n",@"o",@"p",@"q",@"r",@"s",@"t",@"u",@"v",@"w",@"x",@"y",@"z"];
+    });
 
     while (true) {
         NSMutableString * randomStr = [NSMutableString stringWithCapacity:length];
         if (prefix) {
             [randomStr appendString:prefix];
         }
+        NSInteger obfuseLenght = MIN(4, length);
         NSInteger appendIndex = 0;
-        while (appendIndex<length) {
+        while (appendIndex<obfuseLenght) {
             NSInteger index = arc4random_uniform((uint32_t) [confuseDataArray count]);
             NSString * str = confuseDataArray[index];
-            if(str.length + appendIndex <= length){
+            if(str.length + appendIndex <= obfuseLenght){
                 [randomStr appendString:str];
                 appendIndex += str.length;
             }else{
-                [randomStr appendString:[str substringToIndex:length - appendIndex]];
-                appendIndex += length - appendIndex;
+                [randomStr appendString:[str substringToIndex:obfuseLenght - appendIndex]];
+                appendIndex += obfuseLenght - appendIndex;
             }
         }
         
+        if(randomStr.length < length){
+            NSInteger ttIndex = _currentConfuseStr.length-length ;
+            if(ttIndex < 0){
+                ttIndex = 0;
+            }
+            NSString * tempStr = [_currentConfuseStr substringFromIndex:ttIndex];
+            randomStr = [NSMutableString stringWithFormat:@"%@%@",randomStr,[tempStr substringFromIndex:randomStr.length]];
+        }
         
         if([_uniqueSymbols containsObject:randomStr] ||[_forbiddenNames containsObject:randomStr]){
             ++length;
+            ++obfuseLenght;
+            NSInteger index = arc4random_uniform((uint32_t) [randomZiMu count]);
+            _currentConfuseStr = [_currentConfuseStr stringByAppendingString:randomZiMu[index]];
             continue;
         }else{
             return randomStr;
@@ -228,7 +247,12 @@ static NSString *const lettersSet[maxLettersSet] = {
     if ([self shouldSymbolsBeIgnored:symbolName]) {
         return;
     }
-    NSString *newSymbolName = [self generateRandomStringWithLength:symbolName.length];
+    NSInteger allLength = symbolName.length;
+    NSInteger halfLength = allLength/2;
+    _currentConfuseStr = [symbolName copy];
+    NSString *newPartSymbolName = [self generateRandomStringWithLength:halfLength];
+    NSString *orginalPart = [symbolName substringToIndex:allLength-halfLength];
+    NSString * newSymbolName = [NSString stringWithFormat:@"%@%@",orginalPart,newPartSymbolName];
     [self addGenerated:newSymbolName forSymbol:symbolName];
 }
 
@@ -247,7 +271,13 @@ static NSString *const lettersSet[maxLettersSet] = {
         if([symbolName hasSuffix:keepStr]){
             length = symbolName.length - keepStr.length;
             if(length > 0){
-                NSString * newSymbolName = [self generateRandomStringWithLength:length];
+                NSInteger allLength = length;
+                NSInteger halfLength = allLength/2;
+                _currentConfuseStr = [[symbolName substringToIndex:length] copy];
+                NSString *newPartSymbolName = [self generateRandomStringWithLength:halfLength];
+                NSString *orginalPart = [symbolName substringToIndex:allLength-halfLength];
+                NSString * newSymbolName = [NSString stringWithFormat:@"%@%@",orginalPart,newPartSymbolName];
+                
                 [self addGenerated:[NSString stringWithFormat:@"%@%@",newSymbolName,keepStr] forSymbol:symbolName];
             }
             haveConfus = YES;
@@ -256,7 +286,12 @@ static NSString *const lettersSet[maxLettersSet] = {
     }
     
     if(!haveConfus){//走原有的逻辑
-        NSString *newSymbolName = [self generateRandomStringWithLength:symbolName.length];
+        NSInteger allLength = symbolName.length;
+        NSInteger halfLength = allLength/2;
+        _currentConfuseStr = [symbolName copy];
+        NSString *newPartSymbolName = [self generateRandomStringWithLength:halfLength];
+        NSString *orginalPart = [symbolName substringToIndex:allLength-halfLength];
+        NSString * newSymbolName = [NSString stringWithFormat:@"%@%@",orginalPart,newPartSymbolName];
         [self addGenerated:newSymbolName forSymbol:symbolName];
     }
    
@@ -345,10 +380,16 @@ static NSString *const lettersSet[maxLettersSet] = {
     }
     if ([self isInitMethod:symbolName]) {
         NSString *initPrefix = @"initL";
+        _currentConfuseStr = [[symbolName substringFromIndex:4] copy];
         NSString *newSymbolName = [self generateRandomStringWithPrefix:initPrefix length:symbolName.length - initPrefix.length];
         [self addGenerated:newSymbolName forSymbol:symbolName];
     } else {
-        NSString *newSymbolName = [self generateRandomStringWithLength:symbolName.length];
+        NSInteger allLength = symbolName.length;
+        NSInteger halfLength = allLength/2;
+        _currentConfuseStr = [symbolName copy];
+        NSString *newPartSymbolName = [self generateRandomStringWithLength:halfLength];
+        NSString *orginalPart = [symbolName substringToIndex:allLength-halfLength];
+        NSString * newSymbolName = [NSString stringWithFormat:@"%@%@",orginalPart,newPartSymbolName];
         [self addGenerated:newSymbolName forSymbol:getterName];
         [self addGenerated:[@"set" stringByAppendingString:[newSymbolName capitalizeFirstCharacter]] forSymbol:setterName];
     }
@@ -438,7 +479,13 @@ static NSString *const lettersSet[maxLettersSet] = {
     NSInteger symbolLength = propertyName.length;
 
     while (true) {
-        NSString *newPropertyName = [self generateRandomStringWithLength:symbolLength andPrefix:nil];
+        NSInteger allLength = propertyName.length;
+        NSInteger halfLength = allLength/2;
+        _currentConfuseStr = [propertyName copy];
+        NSString *newPartSymbolName = [self generateRandomStringWithLength:halfLength];
+        NSString *orginalPart = [propertyName substringToIndex:allLength-halfLength];
+        NSString * newPropertyName = [NSString stringWithFormat:@"%@%@",orginalPart,newPartSymbolName];
+        
         NSArray *symbols = [self symbolsForProperty:newPropertyName];
 
         BOOL isAlreadyGenerated = NO;
@@ -663,6 +710,7 @@ static NSString *const lettersSet[maxLettersSet] = {
     [_symbols.allKeys enumerateObjectsUsingBlock:^(NSString *key, NSUInteger idx, BOOL *stop) {
         NSString *obfuscated = _symbols[key];
         if (key.length > obfuscated.length) {
+            _currentConfuseStr = [key copy];
             _symbols[key] = [self generateRandomStringWithLength:key.length - obfuscated.length andPrefix:obfuscated];
         }
     }];
